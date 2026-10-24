@@ -15,30 +15,31 @@ else
   state=available
 fi
 
+now=$(TZ=Asia/Kolkata date '+%d %b %Y, %I:%M:%S %p IST')
 prev=$(cat state/hash 2>/dev/null)
-msg="state=$state prev=${prev:-none} http=$code size=$size cookie_len=${#BING_COOKIE}"
+msg="state=$state prev=${prev:-none} time=$now http=$code size=$size cookie_len=${#BING_COOKIE}"
 echo "$msg"
 
-# TEST MODE: notify on every run. Remove this block after testing.
-if [ -z "$NTFY_TOPIC" ]; then
-  echo "ERROR: NTFY_TOPIC is empty"
-else
-  pri=default
-  [ "$state" = available ] && pri=urgent
-  [ "$state" = unknown ] && pri=high
+if [ "$state" != "$prev" ]; then
+  if [ -z "$NTFY_TOPIC" ]; then
+    echo "ERROR: NTFY_TOPIC is empty"
+  else
+    pri=default
+    [ "$state" = available ] && pri=urgent
+    [ "$state" = unknown ] && pri=high
 
-  out=$(curl -sS -w ' [ntfy http=%{http_code}]' \
-    -H "Priority: $pri" -H "Title: bing-watch $state" \
-    -d "$msg" "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
-  echo "ntfy: $out"
+    out=$(curl -sS -w ' [ntfy http=%{http_code}]' \
+      -H "Priority: $pri" -H "Title: bing-watch $state ($now)" \
+      -d "$msg" "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
+    echo "ntfy: $out"
 
-  printf '%s' "$html" > /tmp/page.html
-  out=$(curl -sS -T /tmp/page.html \
-    -H "Filename: page-$state.html" \
-    -H "Title: bing-watch page ($state)" \
-    -H "Message: $msg" \
-    -w ' [ntfy http=%{http_code}]' "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
-  echo "ntfy file: $out"
+    printf '%s' "$html" > /tmp/page.html
+    out=$(curl -sS -T /tmp/page.html \
+      -H "Filename: page-$state.html" \
+      -H "Title: bing-watch page ($state)" \
+      -w ' [ntfy http=%{http_code}]' "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
+    echo "ntfy file: $out"
+  fi
 fi
 
 echo "$state" > state/hash
