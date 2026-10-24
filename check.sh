@@ -27,6 +27,7 @@ if [ "$state" != "$prev" ]; then
     pri=default
     [ "$state" = available ] && pri=urgent
     [ "$state" = unknown ] && pri=high
+    [ "$state" = restocking ] && pri=min
 
     out=$(curl -sS -w ' [ntfy http=%{http_code}]' \
       -H "Priority: $pri" -H "Title: bing-watch $state ($now)" \
@@ -35,6 +36,7 @@ if [ "$state" != "$prev" ]; then
 
     printf '%s' "$html" > /tmp/page.html
     out=$(curl -sS -T /tmp/page.html \
+      -H "Priority: $pri" \
       -H "Filename: page-$state.html" \
       -H "Title: bing-watch page ($state)" \
       -w ' [ntfy http=%{http_code}]' "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
