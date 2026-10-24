@@ -26,8 +26,19 @@ else
   pri=default
   [ "$state" = available ] && pri=urgent
   [ "$state" = unknown ] && pri=high
-  out=$(curl -sS -w ' [ntfy http=%{http_code}]' -H "Priority: $pri" -H "Title: bing-watch $state" -d "$msg" "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
+
+  out=$(curl -sS -w ' [ntfy http=%{http_code}]' \
+    -H "Priority: $pri" -H "Title: bing-watch $state" \
+    -d "$msg" "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
   echo "ntfy: $out"
+
+  printf '%s' "$html" > /tmp/page.html
+  out=$(curl -sS -T /tmp/page.html \
+    -H "Filename: page-$state.html" \
+    -H "Title: bing-watch page ($state)" \
+    -H "Message: $msg" \
+    -w ' [ntfy http=%{http_code}]' "https://ntfy.sh/$NTFY_TOPIC" 2>&1)
+  echo "ntfy file: $out"
 fi
 
 echo "$state" > state/hash
