@@ -9,7 +9,7 @@ size=${#html}
 
 if ! grep -q "Flipkart Gift Card" <<<"$html"; then
   state=unknown
-elif grep -qi "restocking" <<<"$html"; then
+elif grep -q "we&#x27;re restocking" <<<"$html"; then
   state=restocking
 else
   state=available
