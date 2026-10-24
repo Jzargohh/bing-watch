@@ -15,6 +15,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -23,19 +24,6 @@ jobs:
           BING_COOKIE: ${{ secrets.BING_COOKIE }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: bash check.sh
-
-      - name: Debug (remove later)
-        env:
-          BING_COOKIE: ${{ secrets.BING_COOKIE }}
-        run: |
-          curl -sL -A "Mozilla/5.0" -H "Accept-Language: en-IN,en;q=0.9" -H "Cookie: $BING_COOKIE" \
-            https://rewards.bing.com/redeem/sku/000885000034 > page.html
-          echo "=== keywords ==="
-          grep -oiE "Flipkart Gift Card|19,320|restocking|Sign in" page.html | sort | uniq -c
-          echo "=== visible text ==="
-          sed -e 's/<script[^>]*>.*<\/script>//g' -e 's/<[^>]*>/\n/g' page.html | grep -v '^\s*$' | head -60
-          echo "=== stock fields ==="
-          grep -oiE '"[a-zA-Z]*(stock|avail|eligib|inventory|soldout|redeemable|canRedeem)[a-zA-Z]*":[^,}]{0,40}' page.html | sort -u
 
       - name: Save state
         run: |
