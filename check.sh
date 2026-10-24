@@ -2,10 +2,19 @@
 URL="https://rewards.bing.com/redeem/sku/000885000034"
 mkdir -p state
 
-resp=$(curl -sL -A "Mozilla/5.0" -H "Accept-Language: en-IN,en;q=0.9" -H "Cookie: $BING_COOKIE" -w $'\n%{http_code}' "$URL")
-code=${resp##*$'\n'}
+for i in 1 2 3; do
+  resp=$(curl -sL -A "Mozilla/5.0" -H "Accept-Language: en-IN,en;q=0.9" -H "Cookie: $BING_COOKIE" -w $'\n%{http_code}' "$URL")
+  code=${resp##*$'\n'}
+  [ "$code" = 200 ] && break
+  sleep 10
+done
 html=${resp%$'\n'*}
 size=${#html}
+
+if [ "$code" != 200 ]; then
+  echo "fetch failed http=$code, keeping state"
+  exit 0
+fi
 
 if ! grep -q "Flipkart Gift Card" <<<"$html"; then
   state=unknown
