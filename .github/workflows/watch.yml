@@ -1,0 +1,45 @@
+name: watch
+on:
+  schedule:
+    - cron: '0-55/5 * * * *'
+    - cron: '2-57/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check
+        env:
+          BING_COOKIE: ${{ secrets.BING_COOKIE }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: bash check.sh
+
+      - name: Debug (remove later)
+        env:
+          BING_COOKIE: ${{ secrets.BING_COOKIE }}
+        run: |
+          curl -sL -A "Mozilla/5.0" -H "Accept-Language: en-IN,en;q=0.9" -H "Cookie: $BING_COOKIE" \
+            https://rewards.bing.com/redeem/sku/000885000034 > page.html
+          echo "=== keywords ==="
+          grep -oiE "Flipkart Gift Card|19,320|restocking|Sign in" page.html | sort | uniq -c
+          echo "=== visible text ==="
+          sed -e 's/<script[^>]*>.*<\/script>//g' -e 's/<[^>]*>/\n/g' page.html | grep -v '^\s*$' | head -60
+          echo "=== stock fields ==="
+          grep -oiE '"[a-zA-Z]*(stock|avail|eligib|inventory|soldout|redeemable|canRedeem)[a-zA-Z]*":[^,}]{0,40}' page.html | sort -u
+
+      - name: Save state
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add state/hash
+          git diff --cached --quiet || (git commit -m "state" && git push)
